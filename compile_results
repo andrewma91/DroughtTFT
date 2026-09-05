@@ -26,7 +26,8 @@ hoa_df = pd.DataFrame([
     for lead, vals in hoa_results.items()
 ])
 hoa_df.to_csv("./results/horn_of_africa_skill_table.csv", index=False)
-print("saved');
+print("Saved Horn of Africa results.")
+
 all_tables = []
 missing = []
 for region, driver in REGIONS.items():
@@ -42,6 +43,7 @@ for region, driver in REGIONS.items():
         print(f"Missing: {region} — run run_region.py for this region first")
 
 if not all_tables:
+    print("\nNo results found yet. Run run_region.py for each region first.")
     exit()
 
 combined = pd.concat(all_tables, ignore_index=True)
@@ -53,8 +55,22 @@ pivot_pod = combined.pivot_table(index="Lead (months)", columns="region", values
 summary = combined.groupby("Lead (months)")[["RMSE","R²","POD","FAR"]].mean().round(3)
 summary.columns = ["Mean RMSE", "Mean R²", "Mean POD", "Mean FAR"]
 
+print("\n" + "="*70)
+print("TABLE 2 — DroughtGAT Skill by Lead Time and Region")
+print("="*70)
+print("\nRMSE (SPEI-6 units):")
+print(pivot_rmse.to_string())
+print("\nR²:")
+print(pivot_r2.to_string())
+print("\nPOD (SPEI < -1.0):")
+print(pivot_pod.to_string())
+print("\nMean across regions:")
+print(summary.to_string())
+
 combined.to_csv("./results/table2_all_regions.csv", index=False)
 summary.to_csv("./results/table2_summary.csv")
+print("\nSaved: ./results/table2_all_regions.csv")
+print("Saved: ./results/table2_summary.csv")
 
 latex_lines = [
     r"\begin{table}[ht]",
@@ -91,5 +107,10 @@ latex_lines += [
 latex_str = "\n".join(latex_lines)
 with open("./results/table2_latex.txt", "w") as f:
     f.write(latex_str)
+print("Saved: ./results/table2_latex.txt  (ready to paste into paper)")
+
 if missing:
     print(f"\nStill need to run: {missing}")
+    print("Edit CURRENT_REGION in run_region.py and run for each.")
+else:
+    print("\nAll 5 regions complete. Table 2 is ready for the paper.")
