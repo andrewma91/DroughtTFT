@@ -142,7 +142,21 @@ def best_in_col(models, df, lead, metric, want_max):
     return max(vals,key=vals.get) if want_max else min(vals,key=vals.get)
 
 models = ['DroughtTFT','LSTM','Persistence']
-
+latex = [
+    r"\begin{table}[h]",
+    r"\caption{Mean test-set skill across all five regions: DroughtTFT, LSTM",
+    r"baseline, and anomaly persistence (test period 2018--2023).",
+    r"RMSE in SPEI-6 units; mean column averages leads 1--6.",
+    r"Best value per column in \textbf{bold}.}",
+    r"\label{tab:lstm}",
+    r"\centering",r"\small",
+    r"\begin{tabular}{l|cc|cc|cc|cc}",
+    r"\toprule",
+    r" & \multicolumn{2}{c|}{Lead 1} & \multicolumn{2}{c|}{Lead 3}"
+    r" & \multicolumn{2}{c|}{Lead 6} & \multicolumn{2}{c}{Mean (leads 1--6)} \\",
+    r"Model & RMSE & $R^2$ & RMSE & $R^2$ & RMSE & $R^2$ & RMSE & $R^2$ \\",
+    r"\midrule",
+]
 for model in models:
     ds   = summary[summary['model']==model].set_index('Lead (months)')
     row  = [f"\\textbf{{{model}}}" if model=='DroughtTFT' else model]
