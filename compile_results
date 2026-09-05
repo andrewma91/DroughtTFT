@@ -1,0 +1,95 @@
+import pandas as pd
+import numpy as np
+from pathlib import Path
+
+Path("./results").mkdir(exist_ok=True)
+
+REGIONS = {
+    "horn_of_africa": "ENSO/IOD",
+    "ne_brazil": "ENSO/Atlantic",
+    "sahel": "AMO",
+    "sw_us": "PDO/ENSO",
+    "south_asia": "ENSO/IOD monsoon",
+}
+
+hoa_results = {
+    1: {"RMSE": 0.672, "R²": 0.572, "POD": 0.619, "FAR": 0.394},
+    2: {"RMSE": 0.818, "R²": 0.371, "POD": 0.513, "FAR": 0.512},
+    3: {"RMSE": 0.900, "R²": 0.257, "POD": 0.452, "FAR": 0.579},
+    4: {"RMSE": 0.953, "R²": 0.186, "POD": 0.345, "FAR": 0.642},
+    5: {"RMSE": 0.981, "R²": 0.147, "POD": 0.256, "FAR": 0.675},
+    6: {"RMSE": 1.010, "R²": 0.106, "POD": 0.049, "FAR": 0.697},
+}
+hoa_df = pd.DataFrame([
+    {"Lead (months)": lead, "region": "horn_of_africa",
+     "driver": "ENSO/IOD", **vals}
+    for lead, vals in hoa_results.items()
+])
+hoa_df.to_csv("./results/horn_of_africa_skill_table.csv", index=False)
+print("saved');
+all_tables = []
+missing = []
+for region, driver in REGIONS.items():
+    path = f"./results/{region}_skill_table.csv"
+    if Path(path).exists():
+        df = pd.read_csv(path)
+        df["region"] = region
+        df["driver"] = driver
+        all_tables.append(df)
+        print(f"Loaded: {region}")
+    else:
+        missing.append(region)
+        print(f"Missing: {region} — run run_region.py for this region first")
+
+if not all_tables:
+    exit()
+
+combined = pd.concat(all_tables, ignore_index=True)
+
+pivot_rmse = combined.pivot_table(index="Lead (months)", columns="region", values="RMSE").round(3)
+pivot_r2 = combined.pivot_table(index="Lead (months)", columns="region", values="R²").round(3)
+pivot_pod = combined.pivot_table(index="Lead (months)", columns="region", values="POD").round(3)
+
+summary = combined.groupby("Lead (months)")[["RMSE","R²","POD","FAR"]].mean().round(3)
+summary.columns = ["Mean RMSE", "Mean R²", "Mean POD", "Mean FAR"]
+
+combined.to_csv("./results/table2_all_regions.csv", index=False)
+summary.to_csv("./results/table2_summary.csv")
+
+latex_lines = [
+    r"\begin{table}[ht]",
+    r"\centering",
+    r"\caption{DroughtGAT test-set skill by lead time. RMSE in SPEI-6 units."
+    r" POD = Probability of Detection at SPEI-6 $<-1.0$.}",
+    r"\label{tab:skill}",
+    r"\begin{tabular}{c|cc|cc|cc|cc|cc}",
+    r"\hline",
+    r"Lead & \multicolumn{2}{c|}{Horn of Africa} & \multicolumn{2}{c|}{NE Brazil}"
+    r" & \multicolumn{2}{c|}{Sahel} & \multicolumn{2}{c|}{SW US}"
+    r" & \multicolumn{2}{c}{South Asia} \\",
+    r"(mo) & RMSE & R$^2$ & RMSE & R$^2$ & RMSE & R$^2$"
+    r" & RMSE & R$^2$ & RMSE & R$^2$ \\",
+    r"\hline",
+]
+
+region_order = ["horn_of_africa","ne_brazil","sahel","sw_us","south_asia"]
+for lead in range(1, 7):
+    row_data = []
+    for reg in region_order:
+        sub = combined[(combined["Lead (months)"] == lead) & (combined["region"] == reg)]
+        if len(sub):
+            row_data.append(f"{sub['RMSE'].values[0]:.3f} & {sub['R²'].values[0]:.3f}")
+        else:
+            row_data.append("-- & --")
+    latex_lines.append(f"{lead} & " + " & ".join(row_data) + r" \\")
+
+latex_lines += [
+    r"\hline",
+    r"\end{tabular}",
+    r"\end{table}",
+]
+latex_str = "\n".join(latex_lines)
+with open("./results/table2_latex.txt", "w") as f:
+    f.write(latex_str)
+if missing:
+    print(f"\nStill need to run: {missing}")
