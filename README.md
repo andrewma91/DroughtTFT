@@ -100,18 +100,7 @@ DroughtTFT applies an independent Temporal Fusion Transformer per gridpoint:
 
 ## Citation
 
-If you use this code, please cite:
-
-```bibtex
-@article{droughttft2025,
-  title={DroughtTFT: A Multi-Region Temporal Fusion Transformer for
-         Sub-Seasonal to Seasonal SPEI-6 Drought Forecasting at
-         1--6 Month Lead Times},
-  author={[Author Name(s)]},
-  journal={Environmental Research Letters},
-  year={2025}
-}
-```
+[]
 
 ## License
 
