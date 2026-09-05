@@ -5,7 +5,7 @@ from pathlib import Path
 Path("./results").mkdir(exist_ok=True)
 
 REGIONS = ["horn_of_africa", "ne_brazil", "sahel", "sw_us", "south_asia"]
-MODELS  = ["DroughtGAT (full)", "TFT-only (no graph)", "Persistence", "climatology"]
+MODELS  = ["DroughtGAT (full)", "TFT-only (no graph)", "Persistence", "Climatology"]
 
 all_dfs = []
 missing = []
@@ -15,6 +15,9 @@ for region in REGIONS:
         df = pd.read_csv(path)
         all_dfs.append(df)
         print(f"Loaded: {region}")
+    else:
+        missing.append(region)
+        print(f"Missing: {region}. Run ablation.py for region first")
 
 if not all_dfs:
     print("No ablation results found.")
@@ -22,8 +25,11 @@ if not all_dfs:
 
 combined = pd.concat(all_dfs, ignore_index=True)
 
+summary = combined.groupby(["model", "Lead (months)"])[
+    ["RMSE","R²","POD","FAR"]].mean().round(3).reset_index()
 
 print("\n" + "="*70)
+print("TABLE 3 - Ablation Study: Mean Skill Across All Regions")
 print("="*70)
 
 for model in MODELS:
@@ -32,12 +38,13 @@ for model in MODELS:
         print(f"\n{model}:")
         print(sub[["Lead (months)","RMSE","R²","POD"]].to_string(index=False))
 
-gat  = "DroughtGAT (full)"].set_index("Lead (months)")
-tft  = "TFT-only (no graph)"].set_index("Lead (months)")
-pers = "Persistence"].set_index("Lead (months)")
-clim = "Climatology"].set_index("Lead (months)")
+gat  = summary[summary["model"] == "DroughtGAT (full)"].set_index("Lead (months)")
+tft  = summary[summary["model"] == "TFT-only (no graph)"].set_index("Lead (months)")
+pers = summary[summary["model"] == "Persistence"].set_index("Lead (months)")
+clim = summary[summary["model"] == "Climatology"].set_index("Lead (months)")
 
 print("\n" + "="*70)
+print("Graph contribution (DroughtGAT R² - TFT-only R²):")
 print("="*70)
 for lead in sorted(gat.index):
     delta = gat.loc[lead, "R²"] - tft.loc[lead, "R²"]
@@ -77,3 +84,10 @@ latex_str = "\n".join(latex)
 
 with open("./results/table3_ablation_latex.txt", "w") as f:
     f.write(latex_str)
+
+summary.to_csv("./results/table3_ablation.csv", index=False)
+print(f"\nSaved: ./results/table3_ablation.csv")
+print(f"Saved: ./results/table3_ablation_latex.txt")
+
+if missing:
+    print(f"\nStill missing ablation for: {missing}")
