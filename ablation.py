@@ -285,6 +285,22 @@ def run_ablation(region_name):
         return metrics
     tft_trainer.evaluate = types.MethodType(tft_evaluate, tft_trainer)
 
+    if Path(tft_ckpt).exists():
+        ckpt = torch.load(tft_ckpt, map_location=tft_trainer.device, weights_only=False)
+        tft_model.load_state_dict(ckpt["model"])
+        log.info(f"Loaded TFT-only best checkpoint")
+
+    tft_metrics = tft_trainer.evaluate(test_loader)
+    tft_df = DroughtEvaluator(CFG).skill_summary_table(tft_metrics)
+    tft_df["model"] = "TFT-only (no graph)"
+
+    log.info("Computing persistence baseline...")
+    pers_df = persistence_baseline(dataset, test_idx, horizons)
+    pers_df["model"] = "Persistence"
+
+    log.info("Computing climatology baseline...")
+    clim_df = climatology_baseline(dataset, train_idx, test_idx, horizons)
+    clim_df["model"] = "Climatology"
 
     gat_path = f"./results/{region_name}_skill_table.csv"
     if Path(gat_path).exists():
