@@ -2,6 +2,7 @@ import os, zipfile, logging
 import numpy as np
 import pandas as pd
 import xarray as xr
+import cdsapi
 from pathlib import Path
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)s | %(message)s")
