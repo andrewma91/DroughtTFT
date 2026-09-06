@@ -133,3 +133,5 @@ CURRENT_REGION = "horn_of_africa"
 
 if __name__ == "__main__":
     run_region(CURRENT_REGION)
+    log.info(f"Done: {CURRENT_REGION}")
+    log.info("Change CURRENT_REGION and re-run for the next region.")
